@@ -1,3 +1,4 @@
+import shutil
 from argparse import ArgumentParser
 
 import utils
@@ -45,6 +46,21 @@ def get_args():
     return args
 
 
+def del_file(filepath):
+    """
+    删除某一目录下的所有文件或文件夹
+    :param filepath: 路径
+    :return:
+    """
+    del_list = os.listdir(filepath)
+    for f in del_list:
+        file_path = os.path.join(filepath, f)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+
+
 if __name__ == '__main__':
 
     args = get_args()
@@ -64,6 +80,10 @@ if __name__ == '__main__':
     model = CDEvaluator(args)
     model.load_checkpoint(args.checkpoint_name)
     model.eval()
+
+    del_file('samples/predict/aim')  # 清空目标路径
+    with open("samples/predict/aim/aim.txt", "w") as f:  # 清空aim.txt
+        f.close()
 
     for i, batch in enumerate(data_loader):
         name = batch['name']
