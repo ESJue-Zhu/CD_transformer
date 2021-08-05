@@ -1,5 +1,6 @@
 import os
-
+import gdal
+import numpy as np
 import torch
 
 from misc.imutils import save_image
@@ -15,7 +16,7 @@ class CDEvaluator():
         self.net_G = define_G(args=args, gpu_ids=args.gpu_ids)
 
         self.device = torch.device("cuda:%s" % args.gpu_ids[0]
-                                   if torch.cuda.is_available() and len(args.gpu_ids)>0
+                                   if torch.cuda.is_available() and len(args.gpu_ids) > 0
                                    else "cpu")
 
         print(self.device)
@@ -41,7 +42,6 @@ class CDEvaluator():
         else:
             raise FileNotFoundError('no such checkpoint %s' % checkpoint_name)
         return self.net_G
-
 
     def _visualize_pred(self):
         pred = torch.argmax(self.G_pred, dim=1, keepdim=True)
@@ -73,3 +73,21 @@ class CDEvaluator():
             pred = pred[0].cpu().numpy()
             save_image(pred, file_name)
 
+            # TODO 筛选mask面积大于阈值的图片
+            threshold = 1000  # 阈值
+            if np.sum(pred/255) > threshold:
+                aim_dir = self.pred_dir + '/aim'  # 目标路径
+                aim_name = os.path.join(
+                    aim_dir, name[i].replace('.jpg', '.png'))  # 目标文件名
+                save_image(pred, aim_name)  # 保存mask
+                source_dir = 'samples/A'  # 源文件路径
+                source_name = os.path.join(
+                    source_dir, name[i].replace('.jpg', '.png'))  # 源文件名
+                in_ds = gdal.Open(source_name)
+                ori_transform = in_ds.GetGeoTransform()
+                top_left_x = ori_transform[0]  # 左上角x坐标
+                top_left_y = ori_transform[3]  # 左上角y坐标
+                with open("samples/predict/aim/aim.txt", "a") as f:  # 写入aim.txt
+                    f.write(name[i].replace('.jpg', '.png') + ' x:' + str(top_left_x) + ' y:' + str(top_left_y) + '\n')
+                    print('写入文件名和坐标成功')
+                    f.close()
