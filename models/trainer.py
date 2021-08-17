@@ -35,9 +35,10 @@ class CDTrainer():
         self.lr = args.lr
 
         # define optimizers
-        self.optimizer_G = optim.SGD(self.net_G.parameters(), lr=self.lr,
-                                     momentum=0.9,
-                                     weight_decay=5e-4)
+        # self.optimizer_G = optim.SGD(self.net_G.parameters(), lr=self.lr,
+        #                              momentum=0.9,
+        #                              weight_decay=5e-4)
+        self.optimizer_G = optim.Adam(self.net_G.parameters(), lr=self.lr, weight_decay=5e-4)
 
         # define lr schedulers
         self.exp_lr_scheduler_G = get_scheduler(self.optimizer_G, args)
